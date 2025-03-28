@@ -1,13 +1,13 @@
 /* global globalThis */
 /// <reference lib="webworker" />
 
-import { logger } from './service-worker/logger.js';
-import { CacheConfigStore } from './service-worker/cache-config-store.js';
-import { CacheConfigSyncClient } from './service-worker/cache-config-sync-client.js';
-import { APICacheManager } from './service-worker/api-cache-manager.js';
-import { getResponse, debounce, singleton } from './service-worker/utils.js';
-import { FallbackPollingManager } from './service-worker/fallback-polling-manager.js';
-import { dispose } from './service-worker/task-heartbeat-manager.js';
+import { logger } from './logger.js';
+import { CacheConfigStore } from './cache-config-store.js';
+import { CacheConfigSyncClient } from './cache-config-sync-client.js';
+import { APICacheManager } from './api-cache-manager.js';
+import { getResponse, debounce, singleton } from './utils.js';
+import { FallbackPollingManager } from './fallback-polling-manager.js';
+import { dispose } from './task-heartbeat-manager.js';
 
 /**
  * The `ServiceWorkerGlobalScope` context for this service worker.
