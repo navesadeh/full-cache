@@ -143,11 +143,11 @@ In most systems, TTLs are just educated guesses. But with FullCache, you can pus
 
 TTL acts as a fallback mechanism – it helps when real-time config updates are temporarily unavailable (e.g., offline mode or WebSocket failure) – but ideally, it's rarely the deciding factor.
 
-### 🧩 `cacheConfig` Structure
+### 🧩 `CacheConfig` Structure
 
 The configuration supports four levels: global, host, endpoint, and method. Configuration is resolved hierarchically using a top-down override mechanism: values defined at the method level override those from the endpoint level, which override host-level settings, and so on.
 
-📌 Each `MethodConfig` must include **at least one** of the following:
+📌 Each method's `CacheSettings` must include **at least one** of the following:
 
 - `ttl`: for time-based freshness
 - `lastModified`: for exact data-driven freshness  
