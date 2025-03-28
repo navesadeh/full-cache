@@ -1,4 +1,4 @@
-# CoreCache
+# FullCache
 
 ![status](https://img.shields.io/badge/status-in%20development-yellow)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -6,9 +6,9 @@
 
 > **Zero-effort caching. Maximum performance. Universal compatibility.**
 
-CoreCache is a modular, framework-agnostic client-side caching engine that transparently intercepts all `fetch` requests, reduces redundant network calls, and syncs data across tabs – all powered by a background `ServiceWorker`.
+FullCache is a modular, framework-agnostic client-side caching engine that transparently intercepts all `fetch` requests, reduces redundant network calls, and syncs data across tabs – all powered by a background `ServiceWorker`.
 
-## 🔍 What Makes CoreCache Different?
+## 🔍 What Makes FullCache Different?
 
 - Works entirely from the browser – no code changes in API clients
 - Doesn’t _guess_ freshness – it knows it
@@ -20,7 +20,7 @@ CoreCache is a modular, framework-agnostic client-side caching engine that trans
 
 &nbsp;
 
-## 🧠 Why CoreCache?
+## 🧠 Why FullCache?
 
 ### The Problem: Legacy Caching Falls Short
 
@@ -36,9 +36,9 @@ Even popular libraries like **React Query**, **SWR**, or wrappers around **Axios
 
 Meanwhile, modern browsers have powerful storage and compute capabilities – but most apps still fetch the same data repeatedly, wasting bandwidth and processing time.
 
-### CoreCache: A Better Model
+### FullCache: A Better Model
 
-In addition to intercepting fetches and managing local freshness, CoreCache connects to your backend via `WebSocket`. This allows your server to push real-time updates – such as precise `lastModified` timestamps – whenever data changes (e.g., after an ETL finishes). The result: your cache is always aligned with your actual data, with no polling or guessing involved.
+In addition to intercepting fetches and managing local freshness, FullCache connects to your backend via `WebSocket`. This allows your server to push real-time updates – such as precise `lastModified` timestamps – whenever data changes (e.g., after an ETL finishes). The result: your cache is always aligned with your actual data, with no polling or guessing involved.
 
 We believe caching should be:
 
@@ -49,7 +49,7 @@ We believe caching should be:
 - ✅ **Synchronized** – all tabs aligned, deduped, and up to date
 - ✅ **Pushed** – your server should be able to notify the client of data changes in real time, ensuring the cache stays perfectly in sync
 
-CoreCache offers a **unified, smart, and proactive caching layer** that lives in the Service Worker and turns your app into a bandwidth-efficient, lightning-fast powerhouse.  
+FullCache offers a **unified, smart, and proactive caching layer** that lives in the Service Worker and turns your app into a bandwidth-efficient, lightning-fast powerhouse.  
 &nbsp;
 
 ---
@@ -58,7 +58,7 @@ CoreCache offers a **unified, smart, and proactive caching layer** that lives in
 
 ## 🚀 Key Benefits
 
-- 🔑 **Smart Cache Keying** – CoreCache creates stable cache keys by normalizing request data: sorting objects and arrays, ignoring param order, and supporting header-based overrides. This boosts cache reuse and avoids unnecessary misses.
+- 🔑 **Smart Cache Keying** – FullCache creates stable cache keys by normalizing request data: sorting objects and arrays, ignoring param order, and supporting header-based overrides. This boosts cache reuse and avoids unnecessary misses.
 - 🧠 **Smart Deduplication** – Prevents identical fetches from being sent twice (even across tabs!)
 - 🌐 **Cross-tab Sync** – Updates, invalidations, and responses are shared via BroadcastChannel
 - 🔄 **Live Configuration** – Cache rules & freshness logic updated in real time (via `WebSocket` or polling)
@@ -73,7 +73,7 @@ CoreCache offers a **unified, smart, and proactive caching layer** that lives in
 
 ## 🧱 Architecture Overview
 
-![CoreCache flow: Tabs issue fetches → Service Worker deduplicates and caches → Updates pushed from backend via WS/push → Shared config via BroadcastChannel](corecache-architecture.png)  
+![FullCache flow: Tabs issue fetches → Service Worker deduplicates and caches → Updates pushed from backend via WS/push → Shared config via BroadcastChannel](corecache-architecture.png)  
 &nbsp;
 
 ---
@@ -85,7 +85,7 @@ CoreCache offers a **unified, smart, and proactive caching layer** that lives in
 > Coming soon – not yet published to npm
 
 ```sh
-npm install core-cache
+npm install full-cache
 ```
 
 &nbsp;
@@ -94,7 +94,7 @@ npm install core-cache
 
 &nbsp;
 
-This setup registers the `ServiceWorker` and initializes CoreCache with:
+This setup registers the `ServiceWorker` and initializes FullCache with:
 
 - The path to your custom service worker script
 - `WebSocket` URL for receiving real-time configuration updates
@@ -102,9 +102,9 @@ This setup registers the `ServiceWorker` and initializes CoreCache with:
 - Origin filtering to ignore certain requests (e.g. dev environments)
 
 ```js
-import * as CoreCache from 'core-cache';
+import * as FullCache from 'full-cache';
 
-await CoreCache.init({
+await FullCache.init({
   webSocketServerUrl: 'ws://api.example.com/ws',
   cacheName: 'api-cache-v1',
   workerPath: '/service-worker.js',
@@ -116,7 +116,7 @@ await CoreCache.init({
 
 &nbsp;
 
-### 🔧 `CoreCache.init()` Options
+### 🔧 `FullCache.init()` Options
 
 | Option                      | Type       | Required | Description                           |
 | --------------------------- | ---------- | -------- | ------------------------------------- |
@@ -135,11 +135,11 @@ await CoreCache.init({
 
 ## 🛠 Defining Cache Behavior (Server-Side)
 
-📌 **By default, only endpoints explicitly listed in the configuration will be cached.** Any `fetch` call not matching a configured host + endpoint + method will bypass CoreCache and go directly to the network.
+📌 **By default, only endpoints explicitly listed in the configuration will be cached.** Any `fetch` call not matching a configured host + endpoint + method will bypass FullCache and go directly to the network.
 
-⏱️ **Note:** While we use the `ttl` field to determine response freshness, the real strength of CoreCache lies in its use of accurate `lastModified` timestamps.
+⏱️ **Note:** While we use the `ttl` field to determine response freshness, the real strength of FullCache lies in its use of accurate `lastModified` timestamps.
 
-In most systems, TTLs are just educated guesses. But with CoreCache, you can push exact modification times from your backend whenever data is updated (e.g., after an ETL process finishes). This ensures precision-driven caching, avoiding unnecessary requests while guaranteeing freshness.
+In most systems, TTLs are just educated guesses. But with FullCache, you can push exact modification times from your backend whenever data is updated (e.g., after an ETL process finishes). This ensures precision-driven caching, avoiding unnecessary requests while guaranteeing freshness.
 
 TTL acts as a fallback mechanism – it helps when real-time config updates are temporarily unavailable (e.g., offline mode or WebSocket failure) – but ideally, it's rarely the deciding factor.
 
@@ -299,7 +299,7 @@ const exampleConfig: CacheConfig = {
 
 ## 🌐 Backend Integration Examples
 
-To support CoreCache on the backend, you can use any server (Node.js, Python, Go, etc.) to expose two interfaces:
+To support FullCache on the backend, you can use any server (Node.js, Python, Go, etc.) to expose two interfaces:
 
 ### 1. `WebSocket` Push Server
 
@@ -352,7 +352,7 @@ app.get('/cache-config', async (req, res) => {
 
 ### 3. Push Notifications for Background Updates
 
-CoreCache supports proactive cache freshness, even when the app is closed, through backend integration with push and background sync mechanisms.
+FullCache supports proactive cache freshness, even when the app is closed, through backend integration with push and background sync mechanisms.
 
 To enable this, the backend should:
 
