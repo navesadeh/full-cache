@@ -392,92 +392,103 @@ interface CacheConfig {
 
 ```ts
 const exampleConfig: CacheConfig = {
-  configTTL: 3600000, // 1 hour
+  configTTL: 3600000, // Config is valid for 1 hour if no updates arrive
   settings: {
+    // Global settings (fallbacks for everything below)
     keyHeaders: ['Authorization', 'Content-Type'],
     prefetch: 'on-load',
-    ttl: 60000, // 1 minute
+    strategy: 'cache-first',
+    ttl: 60000, // Default TTL: 1 minute
   },
   hosts: {
     'api.example.com': {
       settings: {
-        keyHeaders: ['Authorization'],
+        // Overrides global: applies to all endpoints under this host
         prefetch: 'always',
-        lastModified: 1711646400000, // Set dynamically by server
-        ttl: 120000, // 2 minutes
+        ttl: 120000,
       },
       endpoints: {
         '/users': {
           settings: {
-            prefetch: 'on-update',
-            ttl: 300000, // 5 minutes
+            // Overrides host: applies to all methods under /users
+            ttl: 300000,
           },
           methods: {
             GET: {
-              keyHeaders: ['Authorization'],
+              // Most specific rule: GET /users on api.example.com
               prefetch: 'always',
-              ttl: 60000, // 1 minute
+              strategy: 'stale-while-revalidate',
+              lastModified: 1711646400000, // Provided by backend to ensure precision
+              ttl: 60000,
+              keyHeaders: ['X-Tenant-Id'],
+              cacheIfStatusIn: [
+                [200, 299],
+                [404, 404],
+              ],
+              key: {
+                ignoreQueryKeysOrder: true,
+                ignoreBodyKeysOrderRecursively: true,
+                ignoreNullishQueryParams: true,
+                ignoreNullishBodyKeysRecursively: true,
+                normalizeNumericValues: true,
+              },
             },
             POST: {
+              // Disable caching for POST requests
               prefetch: 'never',
+              strategy: 'network-only',
             },
           },
         },
         '/products': {
-          settings: {
-            prefetch: 'on-load',
-            ttl: 180000, // 3 minutes
-          },
           methods: {
             GET: {
-              prefetch: 'always',
-              lastModified: 1711646400000, // Set dynamically by server
-              ttl: 120000, // 2 minutes
-            },
-            POST: {
               prefetch: 'on-update',
-              ttl: 60000, // 1 minute
+              strategy: 'cache-first',
+              lastModified: 1711646400000,
+              ttl: 180000,
             },
           },
         },
       },
     },
-    'api.another.com': {
+
+    'api.analytics.com': {
       settings: {
-        prefetch: 'never',
-        ttl: 300000, // 5 minutes
+        prefetch: 'never', // Don't proactively cache analytics
+        ttl: 60000,
       },
       endpoints: {
-        '/orders': {
-          settings: {
-            prefetch: 'on-update',
-            lastModified: 1711646400000, // Set dynamically by server
-            ttl: 600000, // 10 minutes
-          },
+        '/events': {
           methods: {
-            GET: {
-              prefetch: 'on-load',
-              lastModified: 1711646400000, // Set dynamically by server
-              ttl: 300000, // 5 minutes
-            },
             POST: {
               prefetch: 'never',
+              strategy: 'network-only',
             },
           },
         },
-        '/inventory': {
-          settings: {
-            prefetch: 'always',
-            ttl: 120000, // 2 minutes
-          },
+      },
+    },
+
+    'api.admin.com': {
+      settings: {
+        prefetch: 'on-load',
+        strategy: 'network-first',
+        ttl: 300000,
+      },
+      endpoints: {
+        '/dashboard/metrics': {
           methods: {
             GET: {
-              prefetch: 'on-load',
-              lastModified: 1711646400000, // Set dynamically by server
-            },
-            POST: {
-              prefetch: 'on-update',
-              ttl: 180000, // 3 minutes
+              lastModified: 1711646400000,
+              prefetch: 'always',
+              strategy: 'cache-first',
+              ttl: 900000, // 15 minutes
+              key: {
+                includeQueryParams: true,
+                includeRequestBody: false,
+                ignoreQueryValuesCase: true,
+              },
             },
           },
         },
