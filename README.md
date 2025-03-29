@@ -58,11 +58,14 @@ FullCache offers a **unified, smart, and proactive caching layer** that lives in
 
 ## 🚀 Key Benefits
 
-- 🔑 **Smart Cache Keying** – FullCache creates stable cache keys by normalizing request data: sorting objects and arrays, ignoring param order, and supporting header-based overrides. This boosts cache reuse and avoids unnecessary misses.
-- 🧠 **Smart Deduplication** – Prevents identical fetches from being sent twice (even across tabs!)
-- 🌐 **Cross-tab Sync** – Updates, invalidations, and responses are shared via BroadcastChannel
+- 🔑 **Smart Cache Keying** – FullCache creates stable cache keys by normalizing request data: sorting objects and arrays, ignoring param order, and supporting header-based overrides. This boosts cache reuse and avoids unnecessary misses
+- 🌐 **Cross-tab Sync** – Updates, invalidations, and responses are shared via `BroadcastChannel`
+- 🧠 **Cross-tab Smart Deduplication** – Prevents identical fetches from being sent twice
+- ⏱️ **Optional Cross-tab Request Debouncing** – Smooths out bursty traffic by merging rapid consecutive requests into a single call
+- 🎯 **Optional Cross-tab Request Throttling** – Controls concurrency by limiting the number of simultaneous requests to the same resource across all tabs
+- ❌ **Optional Cross-tab Automatic Cancellation** – Ensures only the most recent request is processed by canceling any in-flight calls to the same resource
 - 🔄 **Live Configuration** – Cache rules & freshness logic updated in real time (via `WebSocket` or polling)
-- 🔥 **Prefetch Engine** – Pulls in data _before_ it’s needed, even when your app is closed
+- 🔥 **Optional Prefetch Engine** – Pulls in data _before_ it’s needed, even when your app is closed
 - 🧱 **Framework-Free** – No dependency on React, Vue, Angular, or any framework – just pure JavaScript
 - 💾 **Storage-Aware** – `CacheStorage` for responses, `IndexedDB` for configuration  
   &nbsp;
@@ -174,6 +177,8 @@ interface CacheSettings {
    * - `on-load`: Prefetch is triggered when the cache is loaded.
    * - `on-update`: Prefetch is triggered when the cache is updated.
    * - `never`: Prefetching is disabled.
+   *
+   * Defaults to `'never'`.
    */
   prefetch?: 'always' | 'on-load' | 'on-update' | 'never';
 
@@ -197,7 +202,7 @@ interface CacheSettings {
    * - `stale-while-revalidate`: Serve stale cache immediately, then update in the background.
    * - `network-only`: Never use cache; always fetch from the network.
    *
-   * Defaults to `'cache-first'` if not specified.
+   * Defaults to `'cache-first'`.
    */
   strategy?: 'cache-first' | 'network-first' | 'stale-while-revalidate' | 'network-only';
 
@@ -205,12 +210,32 @@ interface CacheSettings {
    * Specifies which HTTP response status codes should be considered valid for caching.
    * Each entry is a tuple representing a closed interval `[min, max]` (inclusive),
    * and a response will be cached if its status falls within one of the specified ranges.
+   * For example: [[200, 299], [404, 404]]
    *
-   * For example:
-   *   [[200, 299]]               // default - cache only successful responses
-   *   [[200, 299], [404, 404]]  // also cache 404 responses
+   * Defaults to `[[200, 299]]`.
    */
   cacheIfStatusIn?: [number, number][];
+
+  /**
+   * An optional debounce window in milliseconds.
+   * Requests to the same resource triggered within this window will be merged into a single execution.
+   * Applies across tabs.
+   */
+  debounce?: number;
+
+  /**
+   * An optional concurrency limit for requests to the same resource.
+   * If the number of active requests exceeds this value, additional ones will be queued.
+   * Applies across tabs.
+   */
+  maxConcurrent?: number;
+
+  /**
+   * If true, any in-flight requests to the same resource will be aborted when a new one is triggered.
+   * Applies across tabs.
+   * Defaults to `false`.
+   */
+  cancelPrevious?: boolean;
 
   /**
    * Configuration options for generating cache keys.
@@ -406,12 +431,14 @@ const exampleConfig: CacheConfig = {
         // Overrides global: applies to all endpoints under this host
         prefetch: 'always',
         ttl: 120000,
+        cancelPrevious: true,
       },
       endpoints: {
         '/users': {
           settings: {
             // Overrides host: applies to all methods under /users
             ttl: 300000,
+            maxConcurrent: 10,
           },
           methods: {
             GET: {
@@ -447,6 +474,7 @@ const exampleConfig: CacheConfig = {
               strategy: 'cache-first',
               lastModified: 1711646400000,
               ttl: 180000,
+              debounce: 300,
             },
           },
         },
